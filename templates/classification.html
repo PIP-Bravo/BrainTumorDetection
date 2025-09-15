@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Brain Tumor Classification</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+  <div id="imageModal" class="modal">
+    <div class="modal-content">
+      <span class="close-modal">&times;</span>
+      <img id="modalImage" src="" alt="Preview Image">
+    </div>
+  </div>
+
+  <div class="container">
+    <header>
+      <h1><i class="fas fa-brain"></i> Brain Tumor Classification</h1>
+      <p>Upload an MRI scan to detect potential brain tumors</p>
+    </header>
+
+    <div class="main-layout">
+      <div class="left-side">
+        <div class="upload-container">
+          <div class="upload-area" id="uploadArea">
+            <i class="fas fa-cloud-upload-alt"></i>
+            <h3>Drag & Drop MRI Image Here</h3>
+            <p>or</p>
+            <label for="fileInput" class="custom-upload-btn">
+              Browse Files
+            </label>
+            <input type="file" id="fileInput" accept="image/*" hidden>
+          </div>
+          
+          <div class="loading" id="loadingIndicator" style="display: none;">
+            <div class="spinner"></div>
+            <p>Analyzing image...</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="right-side">
+        <div class="result-container">
+          <h2><i class="fas fa-diagnoses"></i> Prediction Result</h2>
+          <div id="resultBox" class="result-box">
+            <div class="placeholder" id="resultPlaceholder">
+              <i class="fas fa-microscope"></i>
+              <p>Results will appear here after analysis</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="history-container">
+          <h2><i class="fas fa-history"></i> Prediction History</h2>
+          <div class="history" id="history">
+            <div class="placeholder" id="historyPlaceholder">
+              <i class="fas fa-clock"></i>
+              <p>Your prediction history will appear here</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <p>Brain Tumor Classification System &copy; 2025</p>
+    </footer>
+  </div>
+
+  <script>
+    const fileInput = document.getElementById("fileInput");
+    const uploadArea = document.getElementById("uploadArea");
+    const loadingIndicator = document.getElementById("loadingIndicator");
+    const resultBox = document.getElementById("resultBox");
+    const resultPlaceholder = document.getElementById("resultPlaceholder");
+    const history = document.getElementById("history");
+    const historyPlaceholder = document.getElementById("historyPlaceholder");
+    
+    const modal = document.getElementById("imageModal");
+    const modalImg = document.getElementById("modalImage");
+    const closeModal = document.querySelector(".close-modal");
+
+    function openModal(imageSrc) {
+      modal.style.display = "block";
+      modalImg.src = imageSrc;
+    }
+
+    closeModal.onclick = function() {
+      modal.style.display = "none";
+    }
+
+    window.onclick = function(event) {
+      if (event.target == modal) {
+        modal.style.display = "none";
+      }
+    }
+
+    uploadArea.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      uploadArea.classList.add('dragover');
+    });
+
+    uploadArea.addEventListener('dragleave', () => {
+      uploadArea.classList.remove('dragover');
+    });
+
+    uploadArea.addEventListener('drop', (e) => {
+      e.preventDefault();
+      uploadArea.classList.remove('dragover');
+      
+      if (e.dataTransfer.files.length) {
+        handleFileUpload(e.dataTransfer.files[0]);
+      }
+    });
+
+    fileInput.addEventListener("click", function() {
+      this.value = null;
+    });
+
+    fileInput.addEventListener("change", () => {
+      if (fileInput.files.length) {
+        handleFileUpload(fileInput.files[0]);
+      }
+    });
+
+    async function handleFileUpload(file) {
+      if (!file) return;
+      
+      if (!file.type.match('image.*')) {
+        showError("Please upload an image file");
+        return;
+      }
+      
+      loadingIndicator.style.display = "block";
+      uploadArea.style.opacity = "0.5";
+      
+      const formData = new FormData();
+      formData.append("file", file);
+
+      try {
+        const res = await fetch("/predict", { 
+          method: "POST", 
+          body: formData,
+          headers: {
+            'Cache-Control': 'no-cache'
+          }
+        });
+        
+        const data = await res.json();
+
+        if (data.error) {
+          showError("Error: " + data.error);
+          return;
+        }
+
+        displayResult(data);
+        
+        addToHistory(data);
+        
+      } catch (err) {
+        showError("Prediction failed: " + err.message);
+      } finally {
+        loadingIndicator.style.display = "none";
+        uploadArea.style.opacity = "1";
+      }
+    }
+
+    function displayResult(data) {
+      resultPlaceholder.style.display = "none";
+      
+      const resultClass = data.label === "Tumor" ? "tumor-detected" : "no-tumor";
+      
+      resultBox.innerHTML = `
+        <div class="prediction-result ${resultClass}">
+          <div class="image-preview">
+            <img src="${data.image_data}" alt="Uploaded MRI Scan">
+          </div>
+          <div class="prediction-details">
+            <h3 class="prediction-label">${data.label}</h3>
+            <div class="confidence-meter">
+              <div class="meter-bar">
+                <div class="meter-fill" style="width: ${parseFloat(data.confidence) * 100}%"></div>
+              </div>
+              <span class="confidence-value">${(parseFloat(data.confidence) * 100).toFixed(2)}% confidence</span>
+            </div>
+            <p class="prediction-message">
+              ${data.label === "Tumor" 
+                ? 'Please consult with a medical professional for further evaluation.' 
+                : 'No signs of tumor detected. Regular checkups are still recommended.'}
+            </p>
+          </div>
+        </div>
+      `;
+    }
+
+    function addToHistory(data) {
+      if (historyPlaceholder) {
+        historyPlaceholder.style.display = "none";
+      }
+      
+      const item = document.createElement("div");
+      item.classList.add("history-item");
+      if (data.label === "Tumor") {
+        item.classList.add("tumor-history");
+      }
+      
+      const now = new Date(data.timestamp);
+      const timeString = now.toLocaleTimeString();
+      const dateString = now.toLocaleDateString();
+      
+      item.innerHTML = `
+        <div class="history-image-container">
+          <img src="${data.image_data}" alt="History Image" class="history-img">
+          <div class="history-image-overlay">
+            <button class="view-image-btn" title="View larger image">
+              <i class="fas fa-eye"></i>
+            </button>
+          </div>
+        </div>
+        <div class="history-details">
+          <p class="history-label">${data.label}</p>
+          <p class="history-confidence">${(parseFloat(data.confidence) * 100).toFixed(2)}%</p>
+          <p class="history-time">${timeString}</p>
+          <p class="history-date">${dateString}</p>
+        </div>
+        <button class="delete-btn" title="Delete from history">
+          <i class="fas fa-trash-alt"></i>
+        </button>
+      `;
+      
+      const viewBtn = item.querySelector(".view-image-btn");
+      viewBtn.onclick = () => openModal(data.image_data);
+      
+      const deleteBtn = item.querySelector(".delete-btn");
+      deleteBtn.onclick = () => {
+        item.remove();
+        if (history.children.length === 1) {
+          historyPlaceholder.style.display = "flex";
+        }
+      };
+      
+      history.insertBefore(item, history.firstChild);
+    }
+
+    function showError(message) {
+      const errorDiv = document.createElement("div");
+      errorDiv.className = "error-notification";
+      errorDiv.innerHTML = `
+        <i class="fas fa-exclamation-circle"></i>
+        <span>${message}</span>
+        <button onclick="this.parentElement.remove()">
+          <i class="fas fa-times"></i>
+        </button>
+      `;
+      
+      document.body.appendChild(errorDiv);
+      
+      setTimeout(() => {
+        if (errorDiv.parentElement) {
+          errorDiv.remove();
+        }
+      }, 5000);
+    }
+  </script>
+</body>
+</html>
