@@ -9,19 +9,23 @@ import torchvision.transforms as transforms
 import torch.nn as nn
 import torchvision.models as models
 from datetime import datetime
+import traceback
+
+from static.model.model_definitions import SwinSegmentationModel
 
 app = Flask(__name__)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def load_model():
-    model = models.resnet18(pretrained=False)
-    num_ftrs = model.fc.in_features
-    model.fc = nn.Linear(num_ftrs, 2)
+    model = SwinSegmentationModel().to(device)
+    # num_ftrs = model.fc.in_features
+    # model.fc = nn.Linear(num_ftrs, 2)
     
     try:
-        model.load_state_dict(torch.load("brain_tumor_model.pth", map_location=device))
+        state_dict = torch.load("static/model/best_model.pth", map_location=device)
+        model.load_state_dict(state_dict)
         model.eval()
-        print("Model loaded successfully!")
+        print("Custom SwinSegmentationModel loaded successfully!")
         return model
     except Exception as e:
         print(f"Error loading model: {e}")
@@ -53,6 +57,7 @@ def predict():
     try:
         img_bytes = file.read()
         image = Image.open(io.BytesIO(img_bytes)).convert("RGB")
+        image = image.resize((224, 224))
         
         buffered = io.BytesIO()
         image.save(buffered, format="JPEG")
@@ -61,20 +66,32 @@ def predict():
         img_t = transform(image).unsqueeze(0).to(device)
 
         with torch.no_grad():
-            outputs = model(img_t)
-            probs = torch.softmax(outputs, dim=1)
-            pred_idx = probs.argmax(dim=1).item()
-            pred_label = class_names[pred_idx]
-            confidence = probs[0][pred_idx].item()
+            outputs = model(img_t)  # [1,1,H,W]
+            mask = outputs.squeeze().cpu().numpy()  # [H,W]
+            mask = (mask > 0.5).astype("uint8") * 255  # binary mask
+
+        mask_img = Image.fromarray(mask).convert("L")
+
+        buffered = io.BytesIO()
+        mask_img.save(buffered, format="PNG")
+        mask_str = base64.b64encode(buffered.getvalue()).decode('utf-8')
+
+        image = image.resize(mask_img.size)
+        overlay = Image.blend(image.convert("RGBA"), mask_img.convert("RGBA"), alpha=0.7)
+
+        buffered = io.BytesIO()
+        overlay.save(buffered, format="PNG")
+        overlay_str = base64.b64encode(buffered.getvalue()).decode('utf-8')
 
         return jsonify({
-            "label": pred_label,
-            "confidence": f"{confidence:.4f}",
             "image_data": f"data:image/jpeg;base64,{img_str}",
-            "timestamp": datetime.now().isoformat()
+            "mask_data": f"data:image/png;base64,{mask_str}",
+            "overlay_data": f"data:image/png;base64,{overlay_str}",
         })
-    
+
     except Exception as e:
+        print("Error processing image:", str(e))
+        traceback.print_exc()
         return jsonify({"error": f"Error processing image: {str(e)}"}), 500
 
 if __name__ == "__main__":

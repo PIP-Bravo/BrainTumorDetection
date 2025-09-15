@@ -44,13 +44,37 @@
 
       <div class="right-side">
         <div class="result-container">
-          <h2><i class="fas fa-diagnoses"></i> Prediction Result</h2>
-          <div id="resultBox" class="result-box">
-            <div class="placeholder" id="resultPlaceholder">
-              <i class="fas fa-microscope"></i>
-              <p>Results will appear here after analysis</p>
+          <!-- <div class="result-top"> -->
+            <div style="display: flex; flex-direction: column; flex: 1; align-items: center">
+              <h2><i class="fas fa-diagnoses"></i> Input Image </h2>
+              <div id="resultBoxImage" class="result-box">
+                <div class="placeholder" id="resultPlaceholder">
+                  <i class="fas fa-microscope"></i>
+                  <p>Results will appear here after analysis</p>
+                </div>
+              </div>
             </div>
-          </div>
+            
+            <div style="display: flex; flex-direction: column; flex: 1; align-items: center;">
+              <h2><i class="fa-solid fa-magnifying-glass"></i> Mask Prediction </h2>
+              <div id="resultBoxMask" class="result-box">
+                <div class="placeholder" id="resultPlaceholder">
+                  <i class="fas fa-microscope"></i>
+                  <p>Results will appear here after analysis</p>
+                </div>
+              </div>
+            </div>
+            <div style="display: flex; flex-direction: column; flex: 1; align-items: center">
+              <h2><i class="fa-solid fa-layer-group"></i> Overlay </h2>
+              <div id="resultBoxOverlay" class="result-box">
+                <div class="placeholder" id="resultPlaceholder">
+                  <i class="fas fa-microscope"></i>
+                  <p>Results will appear here after analysis</p>
+                </div>
+              </div>
+            </div>
+          <!-- </div> -->
+
         </div>
 
         <div class="history-container">
@@ -74,7 +98,9 @@
     const fileInput = document.getElementById("fileInput");
     const uploadArea = document.getElementById("uploadArea");
     const loadingIndicator = document.getElementById("loadingIndicator");
-    const resultBox = document.getElementById("resultBox");
+    const resultBoxImage = document.getElementById("resultBoxImage");
+    const resultBoxMask = document.getElementById("resultBoxMask");
+    const resultBoxOverlay = document.getElementById("resultBoxOverlay");
     const resultPlaceholder = document.getElementById("resultPlaceholder");
     const history = document.getElementById("history");
     const historyPlaceholder = document.getElementById("historyPlaceholder");
@@ -150,6 +176,7 @@
         });
         
         const data = await res.json();
+        console.log(data);
 
         if (data.error) {
           showError("Error: " + data.error);
@@ -171,26 +198,24 @@
     function displayResult(data) {
       resultPlaceholder.style.display = "none";
       
-      const resultClass = data.label === "Tumor" ? "tumor-detected" : "no-tumor";
-      
-      resultBox.innerHTML = `
-        <div class="prediction-result ${resultClass}">
+      resultBoxImage.innerHTML = `
+        <div class="prediction-result">
           <div class="image-preview">
             <img src="${data.image_data}" alt="Uploaded MRI Scan">
           </div>
-          <div class="prediction-details">
-            <h3 class="prediction-label">${data.label}</h3>
-            <div class="confidence-meter">
-              <div class="meter-bar">
-                <div class="meter-fill" style="width: ${parseFloat(data.confidence) * 100}%"></div>
-              </div>
-              <span class="confidence-value">${(parseFloat(data.confidence) * 100).toFixed(2)}% confidence</span>
-            </div>
-            <p class="prediction-message">
-              ${data.label === "Tumor" 
-                ? 'Please consult with a medical professional for further evaluation.' 
-                : 'No signs of tumor detected. Regular checkups are still recommended.'}
-            </p>
+        </div>
+      `;
+      resultBoxMask.innerHTML = `
+        <div class="prediction-result">
+          <div class="image-preview">
+            <img src="${data.mask_data}" alt="Uploaded MRI Scan">
+          </div>
+        </div>
+      `;
+      resultBoxOverlay.innerHTML = `
+        <div class="prediction-result">
+          <div class="image-preview">
+            <img src="${data.overlay_data}" alt="Uploaded MRI Scan">
           </div>
         </div>
       `;
