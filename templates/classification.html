@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Brain Tumor Classification</title>
+  <title>Brain Tumor Segmentation</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -18,7 +18,7 @@
 
   <div class="container">
     <header>
-      <h1><i class="fas fa-brain"></i> Brain Tumor Classification</h1>
+      <h1><i class="fas fa-brain"></i> Brain Tumor Segmentation</h1>
       <p>Upload an MRI scan to detect potential brain tumors</p>
     </header>
 
@@ -49,8 +49,8 @@
               <h2><i class="fas fa-diagnoses"></i> Input Image </h2>
               <div id="resultBoxImage" class="result-box">
                 <div class="placeholder" id="resultPlaceholder">
-                  <i class="fas fa-microscope"></i>
-                  <p>Results will appear here after analysis</p>
+                  <!-- <i class="fas fa-microscope"></i>
+                  <p>Results will appear here after analysis</p> -->
                 </div>
               </div>
             </div>
@@ -68,8 +68,8 @@
               <h2><i class="fa-solid fa-layer-group"></i> Overlay </h2>
               <div id="resultBoxOverlay" class="result-box">
                 <div class="placeholder" id="resultPlaceholder">
-                  <i class="fas fa-microscope"></i>
-                  <p>Results will appear here after analysis</p>
+                  <!-- <i class="fas fa-microscope"></i>
+                  <p>Results will appear here after analysis</p> -->
                 </div>
               </div>
             </div>
@@ -90,7 +90,7 @@
     </div>
 
     <footer>
-      <p>Brain Tumor Classification System &copy; 2025</p>
+      <p>Brain Tumor Segmentation System &copy; 2025</p>
     </footer>
   </div>
 
@@ -237,27 +237,55 @@
       const dateString = now.toLocaleDateString();
       
       item.innerHTML = `
+        <div class="history-timestamp-container">
+          <p class="history-time">${timeString}</p>
+            <p class="history-date">${dateString}</p>
+        </div>
         <div class="history-image-container">
-          <img src="${data.image_data}" alt="History Image" class="history-img">
+          <div class="image-preview">
+            <img src="${data.image_data}" alt="Uploaded MRI Scan">
+          </div>
           <div class="history-image-overlay">
             <button class="view-image-btn" title="View larger image">
               <i class="fas fa-eye"></i>
             </button>
           </div>
         </div>
-        <div class="history-details">
-          <p class="history-label">${data.label}</p>
-          <p class="history-confidence">${(parseFloat(data.confidence) * 100).toFixed(2)}%</p>
-          <p class="history-time">${timeString}</p>
-          <p class="history-date">${dateString}</p>
+
+        <div class="history-image-container">
+          <div class="image-preview">
+            <img src="${data.mask_data}" alt="Uploaded MRI Scan">
+          </div>
+          <div class="history-image-overlay">
+            <button class="view-mask-btn" title="View larger image">
+              <i class="fas fa-eye"></i>
+            </button>
+          </div>
         </div>
+
+        <div class="history-image-container">
+          <div class="image-preview">
+            <img src="${data.overlay_data}" alt="Uploaded MRI Scan">
+          </div>
+          <div class="history-image-overlay">
+            <button class="view-overlay-btn" title="View larger image">
+              <i class="fas fa-eye"></i>
+            </button>
+          </div>
+        </div>
+
         <button class="delete-btn" title="Delete from history">
           <i class="fas fa-trash-alt"></i>
         </button>
       `;
       
-      const viewBtn = item.querySelector(".view-image-btn");
-      viewBtn.onclick = () => openModal(data.image_data);
+      const viewImageBtn = item.querySelector(".view-image-btn");
+      const viewMaskBtn = item.querySelector(".view-mask-btn");
+      const viewOverlayBtn = item.querySelector(".view-overlay-btn");
+
+      viewImageBtn.onclick = () => openModal(data.image_data);
+      viewMaskBtn.onclick = () => openModal(data.mask_data);
+      viewOverlayBtn.onclick = () => openModal(data.overlay_data);
       
       const deleteBtn = item.querySelector(".delete-btn");
       deleteBtn.onclick = () => {

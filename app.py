@@ -77,7 +77,7 @@ def predict():
         mask_str = base64.b64encode(buffered.getvalue()).decode('utf-8')
 
         image = image.resize(mask_img.size)
-        overlay = Image.blend(image.convert("RGBA"), mask_img.convert("RGBA"), alpha=0.7)
+        overlay = Image.blend(image.convert("RGBA"), mask_img.convert("RGBA"), alpha=0.6)
 
         buffered = io.BytesIO()
         overlay.save(buffered, format="PNG")
@@ -87,6 +87,7 @@ def predict():
             "image_data": f"data:image/jpeg;base64,{img_str}",
             "mask_data": f"data:image/png;base64,{mask_str}",
             "overlay_data": f"data:image/png;base64,{overlay_str}",
+            "timestamp": datetime.now().isoformat()
         })
 
     except Exception as e:

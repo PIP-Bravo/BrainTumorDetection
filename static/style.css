@@ -21,7 +21,7 @@ body {
   max-width: 1200px;
   width: 100%;
   background: white;
-  padding: 2rem;
+  padding: 7rem;
   border-radius: 1.5rem;
   box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
 }
@@ -67,7 +67,6 @@ header p {
   background: #f8f9fa;
   border-radius: 1rem;
   padding: 2rem;
-  margin-inline: 5rem;
   text-align: center;
   border: 2px dashed #ddd;
   transition: all 0.3s ease;
@@ -162,6 +161,11 @@ header p {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+}
+
+.history-container {
+  flex-direction: column;
+  align-items: center;
 }
 
 .result-box {
@@ -276,8 +280,11 @@ header p {
 }
 
 .history {
+  justify-content: center;
   max-height: 300px;
-  overflow-y: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
 }
 
 .history-item {
@@ -304,11 +311,14 @@ header p {
   border-left: 4px solid #27ae60;
 }
 
+.history-image-container, .history-timestamp-container {
+  margin-right: 1rem;
+}
+
 .history-image-container {
   position: relative;
   width: 60px;
   height: 60px;
-  margin-right: 1rem;
   overflow: hidden;
   border-radius: 0.3rem;
 }
@@ -337,7 +347,7 @@ header p {
   opacity: 1;
 }
 
-.view-image-btn {
+.view-image-btn, .view-mask-btn, .view-overlay-btn {
   background: rgba(255, 255, 255, 0.8);
   border: none;
   border-radius: 50%;
@@ -350,12 +360,12 @@ header p {
   transition: all 0.2s ease;
 }
 
-.view-image-btn:hover {
+.view-image-btn:hover, .view-mask-btn:hover, .view-overlay-btn:hover {
   background: white;
   transform: scale(1.1);
 }
 
-.view-image-btn i {
+.view-image-btn i, .view-mask-btn i, .view-overlay-btn i {
   color: #2c3e50;
   font-size: 0.9rem;
 }
